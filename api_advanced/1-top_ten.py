@@ -2,28 +2,31 @@
 """Print the titles of the first 10 hot posts of a subreddit."""
 import requests
 
+INVALID_CODES = (301, 302, 303, 307, 308, 403, 404)
+
 
 def top_ten(subreddit):
     """Print the titles of the first 10 hot posts of a subreddit.
 
     Print None if the subreddit is invalid.
     """
-    url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
-    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-                             "alu.api_advanced/1.0 (by /u/alu_student)"}
-    params = {"limit": 10}
+    if not subreddit or not isinstance(subreddit, str):
+        print(None)
+        return
+    url = "https://www.reddit.com/r/{}/hot.json?limit=10".format(subreddit)
+    headers = {"User-Agent": "linux:alu.api_advanced:v1.0.0 (by /u/alu)"}
     try:
-        response = requests.get(url, headers=headers, params=params,
-                                allow_redirects=False)
-        children = response.json().get("data").get("children")
-        titles = [child.get("data").get("title") for child in children]
+        response = requests.get(url, headers=headers, allow_redirects=False)
+        if getattr(response, "status_code", 200) in INVALID_CODES:
+            print(None)
+            return
+        children = response.json()["data"]["children"]
+        titles = [child["data"]["title"] for child in children[:10]]
     except Exception:
-        titles = []
+        print(None)
+        return
     if not titles:
         print(None)
         return
-    for title in titles[:10]:
-        try:
-            print(title)
-        except UnicodeEncodeError:
-            print(title.encode("ascii", "replace").decode("ascii"))
+    for title in titles:
+        print(title)
